@@ -357,7 +357,8 @@ export function ContactPage() {
                   <ChannelCard
                     icon={<Mail className="w-5 h-5" />}
                     title={c.contact.channels.email}
-                    value={dir === "rtl" ? "سيُعلن بعد اختيار الدومين" : "After domain selection"}
+                    value="info@snack-fruits.com"
+                    href="mailto:info@snack-fruits.com"
                   />
                 </motion.div>
                 <motion.div variants={staggerItem}>

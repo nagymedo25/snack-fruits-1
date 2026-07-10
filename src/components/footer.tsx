@@ -4,7 +4,7 @@ import * as React from "react";
 import { useNav, type PageId } from "./nav-provider";
 import { useContent } from "./content";
 import { useLang } from "./language-provider";
-import { Snowflake, MapPin, Clock, Linkedin, Instagram, Facebook, MessageCircle, Phone } from "lucide-react";
+import { Snowflake, MapPin, Clock, Linkedin, Instagram, Facebook, MessageCircle, Phone, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useSiteSettings } from "./use-site-settings";
@@ -118,15 +118,11 @@ export function Footer() {
                 <Clock className="w-4 h-4 text-teal" />
                 <span>{siteSettings.workingHours}</span>
               </li>
-              <li className="flex items-start gap-2.5 pt-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange/10 border border-orange/25 text-orange text-[10px] font-semibold uppercase tracking-wider">
-                  {dir === "rtl" ? "قريباً" : "Coming soon"}
-                </span>
-                <span className="text-[11px] text-muted-foreground leading-relaxed">
-                  {dir === "rtl"
-                    ? "البريد الرسمي — سيُعلن بعد اختيار الدومين"
-                    : "Official email — to be announced after domain selection"}
-                </span>
+              <li className="flex items-center gap-2.5">
+                <Mail className="w-4 h-4 text-teal" />
+                <a href="mailto:info@snack-fruits.com" className="hover:text-orange transition-colors">
+                  info@snack-fruits.com
+                </a>
               </li>
             </ul>
           </div>
