@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== Admin users (login to /admin) =====
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // hashed (bcrypt) — set via seed or first-run setup
+  role      String   @default("viewer") // "admin" | "editor" | "viewer"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ===== Products (CMS-managed) =====
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique // "mango-cubes" | "mango-slices" | "strawberry" | "mixed-fruits" | "seasonal-fruits"
+  nameEn      String
+  nameAr      String
+  shortEn     String
+  shortAr     String
+  usesEn      String?
+  usesAr      String?
+  tagsEn      String?  // JSON array as string
+  tagsAr      String?
+  ctaEn       String?
+  ctaAr       String?
+  cutsEn      String?
+  cutsAr      String?
+  varietiesEn String?
+  varietiesAr String?
+  packingEn   String?
+  packingAr   String?
+  storage     String?  // "≤ -18°C"
+  shelfLife   String?
+  imageUrl    String?  // CDN URL for product image (overrides default)
+  loadingQty  String?  // loading quantity per container
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+// ===== Leads (inquiries from contact form) =====
+model Lead {
+  id         String   @id @default(cuid())
+  // Required fields
+  name       String
+  company    String
+  country    String
+  whatsapp   String
+  email      String
+  // Product fields
+  product    String?
+  quantity   String?
+  packing    String?
+  port       String?
+  useCase    String?
+  message    String?
+  // Admin tracking
+  status     String   @default("new") // "new" | "contacted" | "quoted" | "closed"
+  quality    String   @default("general") // "serious" | "general" | "broker"
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("leads")
+}
+
+// ===== Downloads (managed resources) =====
+model Download {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleEn     String
+  titleAr     String
+  descriptionEn String?
+  descriptionAr String?
+  fileUrl     String
+  fileType    String   @default("pdf") // "pdf" | "docx" | "xlsx"
+  version     String?  // "v1.0 — 2026-01"
+  gated       Boolean  @default(true) // requires lead capture
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("downloads")
+}
+
+// ===== Blog / Articles (SEO content) =====
+model Article {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleEn     String
+  titleAr     String
+  excerptEn   String?
+  excerptAr   String?
+  contentEn   String?
+  contentAr   String?
+  coverImage  String?
+  tags        String?  // comma-separated
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("articles")
+}
+
+// ===== Site settings (SEO fields per page, social links, etc.) =====
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String?
+
+  @@map("settings")
+}
+
+// ===== Site text content (Languages page — manage all translatable strings) =====
+model SiteText {
+  id         String   @id @default(cuid())
+  section    String   // "hero" | "products" | "quality" | etc.
+  key        String   @unique // "hero.title1"
+  label      String   // "Hero Title Line 1"
+  originalEn String   // The original hardcoded English text — used as lookup key, NEVER changes
+  valueEn    String?  // Current editable English text (admin can change this)
+  valueAr    String?  // Current editable Arabic text (admin can change this)
+  updatedAt  DateTime @updatedAt
+
+  @@map("site_texts")
+}
