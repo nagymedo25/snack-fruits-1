@@ -50,7 +50,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = React.useMemo(
-    () => ({ lang, setLang, toggle, dir: lang === "ar" ? "rtl" : "ltr", t }),
+    () => ({ lang, setLang, toggle, dir: (lang === "ar" ? "rtl" : "ltr") as "ltr" | "rtl", t }),
     [lang, setLang, toggle, t]
   );
 

@@ -47,14 +47,14 @@ export function useSiteSettings() {
         .then((data) => {
           if (data.ok && data.settings) {
             cachedSettings = { ...DEFAULT_SETTINGS, ...data.settings };
-            return cachedSettings;
+            return cachedSettings as SiteSettings;
           }
           return DEFAULT_SETTINGS;
         })
         .catch(() => DEFAULT_SETTINGS);
     }
 
-    fetchPromise.then((s) => setSettings(s));
+    fetchPromise?.then((s) => setSettings(s));
   }, []);
 
   return settings;
