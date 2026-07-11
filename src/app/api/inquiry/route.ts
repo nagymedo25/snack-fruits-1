@@ -250,6 +250,8 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
+    let adminEmailSuccess = false;
+
     if (brevoApiKey) {
       // ── Brevo Transactional Email API ──
       const brevoHeaders = {
@@ -276,35 +278,55 @@ export async function POST(req: NextRequest) {
           console.error("❌ [Brevo] Admin email failed:", JSON.stringify(adminData, null, 2));
         } else {
           console.log("✅ [Brevo] Admin email sent, messageId:", adminData.messageId);
+          adminEmailSuccess = true;
         }
       } catch (err) {
         console.error("🚨 [Brevo] Admin email exception:", err);
       }
 
-      // B. Auto-reply to the client
-      try {
-        console.log("[Brevo] Sending auto-reply to client:", lead.email);
-        const clientRes = await fetch("https://api.brevo.com/v3/smtp/email", {
-          method: "POST",
-          headers: brevoHeaders,
-          body: JSON.stringify({
-            sender: { name: senderName, email: senderEmail },
-            to: [{ email: lead.email, name: lead.name }],
-            subject: `Thank you for your inquiry - Snack Fruits Co.`,
-            htmlContent: clientMailHtml,
-          }),
-        });
-        const clientData = await clientRes.json();
-        if (!clientRes.ok) {
-          console.error("❌ [Brevo] Client auto-reply failed:", JSON.stringify(clientData, null, 2));
-        } else {
-          console.log("✅ [Brevo] Client auto-reply sent, messageId:", clientData.messageId);
+      // B. Auto-reply to the client (only if admin email succeeded)
+      if (adminEmailSuccess) {
+        try {
+          console.log("[Brevo] Sending auto-reply to client:", lead.email);
+          const clientRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: brevoHeaders,
+            body: JSON.stringify({
+              sender: { name: senderName, email: senderEmail },
+              to: [{ email: lead.email, name: lead.name }],
+              subject: `Thank you for your inquiry - Snack Fruits Co.`,
+              htmlContent: clientMailHtml,
+            }),
+          });
+          const clientData = await clientRes.json();
+          if (!clientRes.ok) {
+            console.error("❌ [Brevo] Client auto-reply failed:", JSON.stringify(clientData, null, 2));
+          } else {
+            console.log("✅ [Brevo] Client auto-reply sent, messageId:", clientData.messageId);
+          }
+        } catch (err) {
+          console.error("🚨 [Brevo] Client auto-reply exception:", err);
         }
-      } catch (err) {
-        console.error("🚨 [Brevo] Client auto-reply exception:", err);
       }
     } else {
       console.warn("⚠️ [Email] BREVO_API_KEY is not set. No email was sent.");
+    }
+
+    if (!adminEmailSuccess) {
+      // Rollback lead from database to keep CRM clean
+      try {
+        await db.lead.delete({
+          where: { id: lead.id }
+        });
+        console.log(`🗑️ [Database] Rolled back lead ID: ${lead.id} due to Brevo mail failure.`);
+      } catch (dbErr) {
+        console.error("🚨 [Database] Failed to rollback lead:", dbErr);
+      }
+
+      return NextResponse.json(
+        { ok: false, error: "email_send_failed", message: "Failed to send notification email via Brevo." },
+        { status: 500 }
+      );
     }
 
     // Trigger webhook if available

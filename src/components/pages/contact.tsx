@@ -226,8 +226,11 @@ export function ContactPage() {
           server_error: dir === "rtl"
             ? "🔧 خطأ في الخادم — حاول مرة أخرى"
             : "🔧 Server error — please retry",
+          email_send_failed: dir === "rtl"
+            ? "✉️ فشل إرسال إيميل التنبيه — يرجى التحقق من إعدادات Brevo"
+            : "✉️ Failed to send email notification — please check Brevo settings",
         };
-        toast.error(errMap[data.error] || "Error", { id: toastId, duration: 5000 });
+        toast.error(errMap[data.error] || (dir === "rtl" ? "حدث خطأ غير متوقع" : "An unexpected error occurred"), { id: toastId, duration: 5000 });
         setLoading(false);
         return;
       }
