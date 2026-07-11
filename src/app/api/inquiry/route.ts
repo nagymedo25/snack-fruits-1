@@ -254,7 +254,8 @@ export async function POST(req: NextRequest) {
     if (resendApiKey) {
       // ── Resend API (works on Vercel serverless, no port blocking) ──
       try {
-        await fetch("https://api.resend.com/emails", {
+        console.log("Attempting to send Admin email via Resend...");
+        const adminRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${resendApiKey}`,
@@ -267,8 +268,16 @@ export async function POST(req: NextRequest) {
             html: adminMailHtml,
           }),
         });
+        
+        const adminData = await adminRes.json();
+        if (!adminRes.ok) {
+          console.error("❌ Resend Admin Email Error:", JSON.stringify(adminData, null, 2));
+        } else {
+          console.log("✅ Resend Admin Email Success:", adminData);
+        }
 
-        await fetch("https://api.resend.com/emails", {
+        console.log("Attempting to send Client auto-reply via Resend...");
+        const clientRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${resendApiKey}`,
@@ -281,8 +290,16 @@ export async function POST(req: NextRequest) {
             html: clientMailHtml,
           }),
         });
+
+        const clientData = await clientRes.json();
+        if (!clientRes.ok) {
+          console.error("❌ Resend Client Auto-reply Error:", JSON.stringify(clientData, null, 2));
+        } else {
+          console.log("✅ Resend Client Auto-reply Success:", clientData);
+        }
+
       } catch (resendErr) {
-        console.error("Resend sending error:", resendErr);
+        console.error("🚨 Critical Resend execution error:", resendErr);
       }
     } else {
       // ── SMTP fallback (for local/VPS environments) ──
