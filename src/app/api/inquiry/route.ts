@@ -174,6 +174,11 @@ export async function POST(req: NextRequest) {
         const qualityLabel = lead.quality === "serious" ? "Serious Client" : lead.quality === "broker" ? "Broker / Intermediary" : "General Inquiry";
 
         // A. Send internal alert to info@snack-fruits.com
+        const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "snack-fruits.com";
+        const proto = req.headers.get("x-forwarded-proto") || "https";
+        const cleanProto = proto.split(",")[0].trim();
+        const origin = `${cleanProto}://${host}`;
+
         const adminMailHtml = `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
             <div style="text-align: center; border-bottom: 2px solid #0d9488; padding-bottom: 15px; margin-bottom: 20px;">
@@ -248,7 +253,7 @@ export async function POST(req: NextRequest) {
             </div>` : ''}
 
             <div style="text-align: center; margin-top: 25px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-              <a href="${req.nextUrl.origin}/admin/leads" style="display: inline-block; padding: 10px 20px; background-color: #0d9488; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+              <a href="${origin}/admin/leads" style="display: inline-block; padding: 10px 20px; background-color: #0d9488; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
                 View on Lead Manager CRM
               </a>
             </div>
