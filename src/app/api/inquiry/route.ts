@@ -23,10 +23,50 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function validateWhatsApp(phone: string): boolean {
-  // Strip all non-digits, must have at least 8 digits
-  const digits = phone.replace(/[^0-9]/g, "");
-  return digits.length >= 8;
+type PhoneRule = {
+  code: string;
+  minDigits: number;
+  maxDigits: number;
+  prefix?: string;
+};
+
+const PHONE_RULES: PhoneRule[] = [
+  { code: "+966", minDigits: 9, maxDigits: 9, prefix: "5" },
+  { code: "+971", minDigits: 9, maxDigits: 9, prefix: "5" },
+  { code: "+965", minDigits: 8, maxDigits: 8 },
+  { code: "+974", minDigits: 8, maxDigits: 8 },
+  { code: "+968", minDigits: 8, maxDigits: 8 },
+  { code: "+973", minDigits: 8, maxDigits: 8 },
+  { code: "+20",  minDigits: 10, maxDigits: 10, prefix: "1" },
+  { code: "+962", minDigits: 9, maxDigits: 9 },
+  { code: "+964", minDigits: 10, maxDigits: 10 },
+  { code: "+213", minDigits: 9, maxDigits: 9 },
+  { code: "+212", minDigits: 9, maxDigits: 9 },
+  { code: "+216", minDigits: 8, maxDigits: 8 },
+  { code: "+218", minDigits: 9, maxDigits: 10 },
+  { code: "+249", minDigits: 9, maxDigits: 9 },
+  { code: "+961", minDigits: 7, maxDigits: 8 },
+  { code: "+970", minDigits: 9, maxDigits: 9 },
+  { code: "+963", minDigits: 9, maxDigits: 9 },
+  { code: "+967", minDigits: 9, maxDigits: 9 },
+];
+
+function validateWhatsApp(phoneWithCode: string): boolean {
+  if (!phoneWithCode) return false;
+  
+  // Find matching rule based on prefix
+  const rule = PHONE_RULES.find(r => phoneWithCode.startsWith(r.code + " "));
+  if (!rule) return false; // Must have a valid country code
+
+  // Get just the digits part
+  const numberPart = phoneWithCode.substring(rule.code.length + 1);
+  const digits = numberPart.replace(/[^0-9]/g, "");
+  
+  if (digits.length < rule.minDigits) return false;
+  if (digits.length > rule.maxDigits) return false;
+  if (rule.prefix && !digits.startsWith(rule.prefix)) return false;
+  
+  return true;
 }
 
 export async function POST(req: NextRequest) {

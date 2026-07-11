@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Lock, Mail, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -45,11 +46,13 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo — theme-aware */}
         <div className="text-center mb-8">
-          <img
-            src={logoSrc}
-            alt="Snack Fruits"
-            className="h-16 w-auto mx-auto mb-3"
-          />
+          <Link href="/" className="inline-block">
+            <img
+              src={logoSrc}
+              alt="Snack Fruits"
+              className="h-16 w-auto mx-auto mb-3 hover:opacity-80 transition-opacity"
+            />
+          </Link>
           <h1 className="font-serif-display text-2xl font-bold">Admin Panel</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Sign in to manage your website
@@ -102,9 +105,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Default credentials: admin@snackfruits.com / admin12345
-        </p>
+
       </div>
     </div>
   );

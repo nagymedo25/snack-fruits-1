@@ -42,7 +42,7 @@ export default function AdminSettingsPage() {
   const fields = [
     { key: "whatsappNumber", label: "WhatsApp number (international, no +)", placeholder: "201039007939" },
     { key: "whatsappDisplay", label: "WhatsApp display", placeholder: "+20 103 900 7939" },
-    { key: "officialEmail", label: "Official email (after domain)", placeholder: "export@snackfruits.com" },
+    { key: "officialEmail", label: "Official email", placeholder: "export@snackfruits.com" },
     { key: "ga4MeasurementId", label: "Google Analytics 4 ID", placeholder: "G-XXXXXXXXXX" },
     { key: "facebook", label: "Facebook URL", placeholder: "https://facebook.com/..." },
     { key: "linkedin", label: "LinkedIn URL", placeholder: "https://linkedin.com/..." },

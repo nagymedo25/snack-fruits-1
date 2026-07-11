@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // Exclude server-only packages from bundling (fixes Turbopack compilation freeze)
+  serverExternalPackages: ["nodemailer"],
 };
 
 export default nextConfig;
+

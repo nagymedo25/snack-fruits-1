@@ -18,6 +18,7 @@ import {
   X,
   ExternalLink,
   Globe,
+  UserCircle,
 } from "lucide-react";
 
 type NavItem = {
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
   { href: "/admin/languages", label: "Languages", icon: <Globe className="w-4 h-4" /> },
   { href: "/admin/settings", label: "Settings", icon: <Settings className="w-4 h-4" />, adminOnly: true },
   { href: "/admin/users", label: "Users", icon: <Users className="w-4 h-4" />, adminOnly: true },
+  { href: "/admin/account", label: "Account", icon: <UserCircle className="w-4 h-4" /> },
 ];
 
 export function AdminNav({

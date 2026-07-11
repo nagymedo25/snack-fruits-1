@@ -268,7 +268,7 @@ export function useContent() {
       },
       channels: {
         whatsapp: t("WhatsApp Export Team", "فريق التصدير واتساب"),
-        email: t("Official email (after domain)", "البريد الرسمي (بعد الدومين)"),
+        email: t("Official Email", "البريد الرسمي"),
         location: t("Egypt — serving GCC", "مصر — نخدم الخليج"),
         hours: t("Sun–Thu · 9:00–18:00 EET", "الأحد–الخميس · 9:00–18:00 EET"),
       },
