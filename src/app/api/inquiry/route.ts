@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import nodemailer from "nodemailer";
 
 // ===== Simple in-memory rate limiting (per IP) =====
 // 5 inquiries per IP per 10 minutes
@@ -149,11 +148,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ===== 6. Trigger email notification =====
-    // Prefer Resend API (works on Vercel), fallback to SMTP for local/VPS
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const emailTo = process.env.SMTP_TO || "info@snack-fruits.com";
-    const emailFrom = process.env.SMTP_FROM || "Snack Fruits <info@snack-fruits.com>";
+    // ===== 6. Trigger email notification (Brevo Transactional Email API) =====
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    const emailTo   = process.env.EMAIL_TO   || "info@snack-fruits.com";
+    const senderName  = "Snack Fruits Co.";
+    const senderEmail = process.env.EMAIL_FROM || "info@snack-fruits.com";
 
     const qualityColor = lead.quality === "serious" ? "#0d9488" : lead.quality === "broker" ? "#d97706" : "#4b5563";
     const qualityLabel = lead.quality === "serious" ? "Serious Client" : lead.quality === "broker" ? "Broker / Intermediary" : "General Inquiry";
@@ -251,86 +250,61 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    if (resendApiKey) {
-      // ── Resend API (works on Vercel serverless, no port blocking) ──
+    if (brevoApiKey) {
+      // ── Brevo Transactional Email API ──
+      const brevoHeaders = {
+        "accept": "application/json",
+        "api-key": brevoApiKey,
+        "content-type": "application/json",
+      };
+
+      // A. Internal alert to admin
       try {
-        console.log("Attempting to send Admin email via Resend...");
-        const adminRes = await fetch("https://api.resend.com/emails", {
+        console.log("[Brevo] Sending admin alert to:", emailTo);
+        const adminRes = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: brevoHeaders,
           body: JSON.stringify({
-            from: emailFrom,
-            to: [emailTo],
+            sender: { name: senderName, email: senderEmail },
+            to: [{ email: emailTo }],
             subject: `🔔 New Inquiry: ${lead.name} (${lead.company})`,
-            html: adminMailHtml,
+            htmlContent: adminMailHtml,
           }),
         });
-        
         const adminData = await adminRes.json();
         if (!adminRes.ok) {
-          console.error("❌ Resend Admin Email Error:", JSON.stringify(adminData, null, 2));
+          console.error("❌ [Brevo] Admin email failed:", JSON.stringify(adminData, null, 2));
         } else {
-          console.log("✅ Resend Admin Email Success:", adminData);
+          console.log("✅ [Brevo] Admin email sent, messageId:", adminData.messageId);
         }
+      } catch (err) {
+        console.error("🚨 [Brevo] Admin email exception:", err);
+      }
 
-        console.log("Attempting to send Client auto-reply via Resend...");
-        const clientRes = await fetch("https://api.resend.com/emails", {
+      // B. Auto-reply to the client
+      try {
+        console.log("[Brevo] Sending auto-reply to client:", lead.email);
+        const clientRes = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: brevoHeaders,
           body: JSON.stringify({
-            from: emailFrom,
-            to: [lead.email],
+            sender: { name: senderName, email: senderEmail },
+            to: [{ email: lead.email, name: lead.name }],
             subject: `Thank you for your inquiry - Snack Fruits Co.`,
-            html: clientMailHtml,
+            htmlContent: clientMailHtml,
           }),
         });
-
         const clientData = await clientRes.json();
         if (!clientRes.ok) {
-          console.error("❌ Resend Client Auto-reply Error:", JSON.stringify(clientData, null, 2));
+          console.error("❌ [Brevo] Client auto-reply failed:", JSON.stringify(clientData, null, 2));
         } else {
-          console.log("✅ Resend Client Auto-reply Success:", clientData);
+          console.log("✅ [Brevo] Client auto-reply sent, messageId:", clientData.messageId);
         }
-
-      } catch (resendErr) {
-        console.error("🚨 Critical Resend execution error:", resendErr);
+      } catch (err) {
+        console.error("🚨 [Brevo] Client auto-reply exception:", err);
       }
     } else {
-      // ── SMTP fallback (for local/VPS environments) ──
-      const smtpHost = process.env.SMTP_HOST;
-      const smtpPort = parseInt(process.env.SMTP_PORT || "465");
-      const smtpUser = process.env.SMTP_USER;
-      const smtpPassword = process.env.SMTP_PASSWORD;
-      if (smtpHost && smtpUser && smtpPassword) {
-        try {
-          const transporter = nodemailer.createTransport({
-            host: smtpHost,
-            port: smtpPort,
-            secure: smtpPort === 465,
-            auth: { user: smtpUser, pass: smtpPassword },
-          });
-          await transporter.sendMail({
-            from: emailFrom,
-            to: emailTo,
-            subject: `🔔 New Inquiry: ${lead.name} (${lead.company})`,
-            html: adminMailHtml,
-          });
-          await transporter.sendMail({
-            from: emailFrom,
-            to: lead.email,
-            subject: `Thank you for your inquiry - Snack Fruits Co.`,
-            html: clientMailHtml,
-          });
-        } catch (smtpErr) {
-          console.error("SMTP sending error:", smtpErr);
-        }
-      }
+      console.warn("⚠️ [Email] BREVO_API_KEY is not set. No email was sent.");
     }
 
     // Trigger webhook if available
