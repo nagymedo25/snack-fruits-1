@@ -352,7 +352,7 @@ function useContactForm(dir: "ltr" | "rtl") {
   };
 }
 
-export function ContactVersion2Client() {
+export function ContactPageClient() {
   const c = useContent();
   const { dir, t } = useLang();
   const siteSettings = useSiteSettings();
@@ -391,7 +391,7 @@ export function ContactVersion2Client() {
   const navigateToMainSite = React.useCallback((page: PageId) => {
     if (typeof window === "undefined") return;
     if (page === "contact") {
-      window.location.href = "/contact-version-2";
+      window.location.href = "/contact";
       return;
     }
     window.location.href = `/#${page}`;

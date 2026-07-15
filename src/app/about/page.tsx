@@ -158,7 +158,7 @@ export default function AboutPage() {
             indicative pricing.
           </p>
           <Link
-            href="/#contact"
+            href="/contact"
             className="shine-hover inline-flex items-center gap-2 h-12 px-7 rounded-full bg-orange text-white font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
           >
             Request a Quotation

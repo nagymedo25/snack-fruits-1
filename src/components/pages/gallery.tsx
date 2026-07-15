@@ -232,7 +232,7 @@ export function GalleryPage() {
                 : "Currently displayed placeholders. We'll send you real product and packaging photos on request."}
             </p>
             <button
-              onClick={() => navigate("contact")}
+              onClick={() => { window.location.href = "/contact" }}
               className="mt-7 inline-flex items-center gap-2 h-12 px-6 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
             >
               {dir === "rtl" ? "اطلب صور حقيقية" : "Request real photos"}

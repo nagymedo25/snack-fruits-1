@@ -12,7 +12,6 @@ import { GccPage } from "./pages/gcc";
 import { ProcessPage } from "./pages/process";
 import { PrivateLabelPage } from "./pages/private-label";
 import { GalleryPage } from "./pages/gallery";
-import { ContactPage } from "./pages/contact";
 
 function CurrentPage() {
   const { page } = useNav();
@@ -24,7 +23,6 @@ function CurrentPage() {
     case "process": return <ProcessPage />;
     case "private-label": return <PrivateLabelPage />;
     case "gallery": return <GalleryPage />;
-    case "contact": return <ContactPage />;
     default: return <HomePage />;
   }
 }

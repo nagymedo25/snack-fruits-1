@@ -290,7 +290,7 @@ export function QualityPage() {
                         : "Enter your details to download available documents. Each file has a version date so we never send outdated specs."}
                     </p>
                     <button
-                      onClick={() => navigate("contact")}
+                      onClick={() => { window.location.href = "/contact" }}
                       className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-full bg-orange text-orange-foreground font-semibold text-xs hover:bg-orange-dark transition-colors"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -339,7 +339,7 @@ export function QualityPage() {
                 : "Send an inquiry specifying the product — we'll respond with the list of documents available for you and your destination."}
             </p>
             <button
-              onClick={() => navigate("contact")}
+              onClick={() => { window.location.href = "/contact" }}
               className="mt-7 inline-flex items-center gap-2 h-12 px-6 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
             >
               {c.quality.certs.cta}

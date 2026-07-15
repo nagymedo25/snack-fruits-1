@@ -9,8 +9,7 @@ export type PageId =
   | "gcc"
   | "process"
   | "private-label"
-  | "gallery"
-  | "contact";
+  | "gallery";
 
 type NavCtx = {
   page: PageId;

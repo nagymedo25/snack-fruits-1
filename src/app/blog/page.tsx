@@ -85,7 +85,7 @@ export default async function BlogPage() {
                 on social media for updates.
               </p>
               <Link
-                href="/#contact"
+                href="/contact"
                 className="mt-7 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-orange text-white font-semibold text-sm hover:bg-orange-dark transition-colors"
               >
                 Send us an inquiry instead

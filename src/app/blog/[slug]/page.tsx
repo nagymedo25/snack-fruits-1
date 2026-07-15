@@ -130,7 +130,7 @@ export default async function ArticlePage({ params }: Props) {
             Interested in our IQF products?
           </h2>
           <Link
-            href="/#contact"
+            href="/contact"
             className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-orange text-white font-semibold text-sm hover:bg-orange-dark transition-colors"
           >
             Request a Quotation

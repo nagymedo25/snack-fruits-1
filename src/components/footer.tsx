@@ -20,12 +20,12 @@ export function Footer() {
   const isDark = mounted && resolvedTheme === "dark";
   const logoSrc = isDark ? "/dark-logo.webp" : "/light-logo.webp";
 
-  const quickLinks: { id: PageId; label: string }[] = [
+  const quickLinks: { id?: PageId; label: string; href?: string }[] = [
     { id: "products", label: c.nav.products },
     { id: "quality", label: c.nav.quality },
     { id: "gcc", label: c.nav.gcc },
     { id: "process", label: c.nav.process },
-    { id: "contact", label: c.nav.contact },
+    { id: "contact", label: c.nav.contact, href: "/contact" },
   ];
 
   return (
@@ -85,13 +85,22 @@ export function Footer() {
             </h3>
             <ul className="space-y-2.5">
               {quickLinks.map((l) => (
-                <li key={l.id}>
-                  <button
-                    onClick={() => navigate(l.id)}
-                    className="text-sm text-muted-foreground hover:text-orange transition-colors text-left"
-                  >
-                    {l.label}
-                  </button>
+                <li key={l.id ?? l.href}>
+                  {l.href ? (
+                    <a
+                      href={l.href}
+                      className="text-sm text-muted-foreground hover:text-orange transition-colors"
+                    >
+                      {l.label}
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => l.id && navigate(l.id)}
+                      className="text-sm text-muted-foreground hover:text-orange transition-colors text-left"
+                    >
+                      {l.label}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

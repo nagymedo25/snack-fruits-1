@@ -51,7 +51,7 @@ export function PrivateLabelPage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Magnetic strength={0.15}>
                     <button
-                      onClick={() => navigate("contact")}
+                      onClick={() => { window.location.href = "/contact" }}
                       className="shine-hover inline-flex items-center gap-2 h-12 px-7 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
                     >
                       {c.privateLabel.cta}
@@ -319,7 +319,7 @@ export function PrivateLabelPage() {
               </StaggerGroup>
               <Reveal delay={0.3}>
                 <button
-                  onClick={() => navigate("contact")}
+                  onClick={() => { window.location.href = "/contact" }}
                   className="mt-7 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
                 >
                   {c.privateLabel.cta}
@@ -344,7 +344,7 @@ export function PrivateLabelPage() {
                 : "Send us pack type, size, volume and country — we respond with a detailed packing proposal and MOQ."}
             </p>
             <button
-              onClick={() => navigate("contact")}
+              onClick={() => { window.location.href = "/contact" }}
               className="mt-7 inline-flex items-center gap-2 h-12 px-6 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
             >
               {c.nav.requestQuote}

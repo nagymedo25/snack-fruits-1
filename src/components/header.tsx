@@ -29,7 +29,7 @@ export function Header() {
     return () => unsub();
   }, [scrollY]);
 
-  const items: { id: PageId; label: string }[] = [
+  const items: { id: PageId | "contact"; label: string; href?: string }[] = [
     { id: "home", label: c.nav.home },
     { id: "products", label: c.nav.products },
     { id: "quality", label: c.nav.quality },
@@ -37,7 +37,7 @@ export function Header() {
     { id: "process", label: c.nav.process },
     { id: "private-label", label: c.nav.privateLabel },
     { id: "gallery", label: c.nav.gallery },
-    { id: "contact", label: c.nav.contact },
+    { id: "contact", label: c.nav.contact, href: "/contact" },
   ];
 
   return (
@@ -104,11 +104,11 @@ export function Header() {
             <nav className="hidden lg:flex items-center gap-1">
               {items.map((item) => {
                 const active = page === item.id;
-                if (item.id === "contact") {
+                if (item.href) {
                   return (
                     <a
                       key={item.id}
-                      href="/contact-version-2"
+                      href={item.href}
                       className={`relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
                         active
                           ? "text-teal"
@@ -154,7 +154,7 @@ export function Header() {
               <LanguageToggle />
               <ThemeToggle />
               <a
-                href="/contact-version-2"
+                href="/contact"
                 className="hidden sm:inline-flex shine-hover items-center gap-1.5 px-3 lg:px-4 h-9 rounded-full bg-orange text-orange-foreground font-semibold text-xs lg:text-sm shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
               >
                 <Phone className="w-3 h-3 lg:w-3.5 lg:h-3.5" strokeWidth={2.4} />
@@ -190,10 +190,10 @@ export function Header() {
           >
             <div className="px-4 py-4 space-y-1">
               {items.map((item) => (
-                item.id === "contact" ? (
+                item.href ? (
                   <a
                     key={item.id}
-                    href="/contact-version-2"
+                    href={item.href}
                     onClick={() => setOpen(false)}
                     className={`block w-full text-${dir === "rtl" ? "right" : "left"} px-4 py-3 rounded-lg text-sm font-medium ${
                       page === item.id
@@ -221,7 +221,7 @@ export function Header() {
                 )
               ))}
               <a
-                href="/contact-version-2"
+                href="/contact"
                 onClick={() => setOpen(false)}
                 className="block w-full mt-2 px-4 py-3 rounded-lg bg-orange text-orange-foreground font-semibold text-sm"
               >
