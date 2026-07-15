@@ -1,21 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useContent } from "../content";
 import { useLang } from "../language-provider";
-import {
-  Reveal, StaggerGroup, staggerItem, FrostField, FloatingShape, Kicker, AnimatedUnderline, Marquee, Magnetic,
-} from "../anim";
 import { useSiteSettings } from "../use-site-settings";
 import {
   Send, MessageCircle, Mail, MapPin, Clock3, CheckCircle2, Building2, Globe2, Phone, FileText, Sparkles, AlertCircle, ChevronDown, Search, Check, X, User,
 } from "lucide-react";
 import { toast } from "sonner";
-
-/* ═══════════════════════════════════════════════════════════════════════
-   PHONE RULES — per-country WhatsApp number validation
-   ═══════════════════════════════════════════════════════════════════════ */
 
 type PhoneRule = {
   code: string;
@@ -25,7 +17,7 @@ type PhoneRule = {
   iso: string;
   minDigits: number;
   maxDigits: number;
-  prefix?: string; // first digit(s) that the local number must start with
+  prefix?: string;
 };
 
 const PHONE_RULES: PhoneRule[] = [
@@ -49,15 +41,11 @@ const PHONE_RULES: PhoneRule[] = [
   { code: "+967", label: "اليمن", labelEn: "Yemen", flag: "🇾🇪", iso: "YE", minDigits: 9, maxDigits: 9 },
 ];
 
-/* ═══════════════════════════════════════════════════════════════════════
-   VALIDATION HELPERS
-   ═══════════════════════════════════════════════════════════════════════ */
-
 function validateName(v: string): string | null {
-  if (!v.trim()) return null; // not touched yet
+  if (!v.trim()) return null;
   if (v.trim().length < 2) return "min2chars";
   if (/[0-9]/.test(v)) return "noNumbers";
-  return ""; // valid
+  return "";
 }
 
 function validateCompany(v: string): string | null {
@@ -94,25 +82,29 @@ function getFieldStatus(error: string | null): FieldStatus {
   return "error";
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════════════════════════ */
-
 export function ContactPage() {
   const c = useContent();
   const { dir } = useLang();
   const siteSettings = useSiteSettings();
   const [submitted, setSubmitted] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [selectedRule, setSelectedRule] = React.useState(PHONE_RULES[0]); // Default to KSA
+  const [selectedRule, setSelectedRule] = React.useState(PHONE_RULES[0]);
   const [form, setForm] = React.useState({
-    name: "", company: "", country: "", whatsapp: "", email: "",
-    product: "", quantity: "", packing: "", port: "", use: "", message: "",
-    website: "", // honeypot
+    name: "",
+    company: "",
+    country: "",
+    whatsapp: "",
+    email: "",
+    product: "",
+    quantity: "",
+    packing: "",
+    port: "",
+    use: "",
+    message: "",
+    website: "",
   });
   const [touched, setTouched] = React.useState<Record<string, boolean>>({});
 
-  // Real-time validation states
   const validationResults = React.useMemo(() => {
     const digits = form.whatsapp.replace(/[^0-9]/g, "");
     return {
@@ -124,26 +116,39 @@ export function ContactPage() {
     };
   }, [form.name, form.company, form.country, form.email, form.whatsapp, selectedRule]);
 
-  const getError = (field: string): string | null => {
+  const stripItems = React.useMemo(
+    () => [
+      dir === "rtl" ? "رد خلال 1 يوم عمل" : "Response in 1 business day",
+      dir === "rtl" ? "بيانات كاملة = رد أسرع" : "More details = faster response",
+      dir === "rtl" ? "متابعة واتساب احترافية" : "Professional WhatsApp follow-up",
+      dir === "rtl" ? "نؤهل استفسارك بكل احترام" : "We qualify your inquiry respectfully",
+    ],
+    [dir]
+  );
+
+  const getError = React.useCallback((field: string): string | null => {
     if (!touched[field]) return null;
     return validationResults[field as keyof typeof validationResults] ?? null;
-  };
+  }, [touched, validationResults]);
 
-  const getStatus = (field: string): FieldStatus => getFieldStatus(getError(field));
+  const getStatus = React.useCallback((field: string): FieldStatus => {
+    return getFieldStatus(getError(field));
+  }, [getError]);
 
-  const update = (k: string, v: string) => {
-    setForm((p) => ({ ...p, [k]: v }));
-    setTouched((p) => ({ ...p, [k]: true }));
-  };
+  const update = React.useCallback((key: string, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
 
-  const markTouched = (k: string) => {
-    setTouched((p) => ({ ...p, [k]: true }));
-  };
+  const markTouched = React.useCallback((key: string) => {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
 
-  const getErrorMsg = (field: string): string | undefined => {
+  const getErrorMsg = React.useCallback((field: string): string | undefined => {
     const err = getError(field);
     if (!err) return undefined;
-    const msgs: Record<string, Record<string, string>> = {
+
+    const messages: Record<string, Record<string, string>> = {
       rtl: {
         min2chars: "حرفين على الأقل",
         noNumbers: "لا يمكن أن يحتوي على أرقام",
@@ -161,10 +166,11 @@ export function ContactPage() {
         wrongPrefix: `Must start with ${selectedRule.prefix} for ${selectedRule.labelEn}`,
       },
     };
-    return msgs[dir === "rtl" ? "rtl" : "ltr"][err];
-  };
 
-  const allRequiredValid = () => {
+    return messages[dir === "rtl" ? "rtl" : "ltr"][err];
+  }, [dir, getError, selectedRule]);
+
+  const allRequiredValid = React.useCallback(() => {
     const digits = form.whatsapp.replace(/[^0-9]/g, "");
     return (
       validateName(form.name) === "" &&
@@ -173,13 +179,19 @@ export function ContactPage() {
       validateEmail(form.email) === "" &&
       validateWhatsApp(digits, selectedRule) === ""
     );
-  };
+  }, [form, selectedRule]);
 
-  const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-    // Touch all required fields
-    setTouched({ name: true, company: true, country: true, email: true, whatsapp: true });
+    setTouched((prev) => ({
+      ...prev,
+      name: true,
+      company: true,
+      country: true,
+      email: true,
+      whatsapp: true,
+    }));
 
     if (!allRequiredValid()) {
       toast.error(
@@ -192,25 +204,26 @@ export function ContactPage() {
     }
 
     setLoading(true);
-
-    // Toast for progress
     const toastId = toast.loading(
       dir === "rtl" ? "جارٍ إرسال الاستفسار…" : "Submitting your inquiry…"
     );
 
     try {
-      const res = await fetch("/api/inquiry", {
+      const response = await fetch("/api/inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          useCase: form.use,
           whatsapp: `${selectedRule.code} ${form.whatsapp}`,
-          website: "", // honeypot
+          website: "",
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        const errMap: Record<string, string> = {
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        const errorMap: Record<string, string> = {
           rate_limited: dir === "rtl"
             ? "⏳ محاولات كثيرة — حاول بعد دقائق"
             : "⏳ Too many attempts — try again in a few minutes",
@@ -230,10 +243,15 @@ export function ContactPage() {
             ? "✉️ فشل إرسال إيميل التنبيه — يرجى التحقق من إعدادات Brevo"
             : "✉️ Failed to send email notification — please check Brevo settings",
         };
-        toast.error(errMap[data.error] || (dir === "rtl" ? "حدث خطأ غير متوقع" : "An unexpected error occurred"), { id: toastId, duration: 5000 });
+
+        toast.error(
+          errorMap[data.error] || (dir === "rtl" ? "حدث خطأ غير متوقع" : "An unexpected error occurred"),
+          { id: toastId, duration: 5000 }
+        );
         setLoading(false);
         return;
       }
+
       setSubmitted(true);
       toast.success(
         dir === "rtl"
@@ -248,344 +266,335 @@ export function ContactPage() {
           : " Failed to submit — check your internet connection",
         { id: toastId, duration: 5000 }
       );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const reset = () => {
-    setForm({ name: "", company: "", country: "", whatsapp: "", email: "", product: "", quantity: "", packing: "", port: "", use: "", message: "", website: "" });
+  const reset = React.useCallback(() => {
+    setForm({
+      name: "",
+      company: "",
+      country: "",
+      whatsapp: "",
+      email: "",
+      product: "",
+      quantity: "",
+      packing: "",
+      port: "",
+      use: "",
+      message: "",
+      website: "",
+    });
     setTouched({});
     setSubmitted(false);
-  };
+  }, []);
+
+  const titleParts = c.contact.title.split(" ");
+  const titleStart = titleParts.slice(0, 2).join(" ");
+  const titleEnd = titleParts.slice(2).join(" ");
+  const flowTitleParts = c.contact.flow.title.split(" ");
+  const flowTitleStart = flowTitleParts.slice(0, 2).join(" ");
+  const flowTitleEnd = flowTitleParts.slice(2).join(" ");
 
   return (
     <div className="overflow-hidden">
-      {/* HERO */}
-      <section className="relative pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
+      <section className="relative overflow-hidden pt-16 pb-12 lg:pt-24 lg:pb-16">
         <div className="absolute inset-0 bg-grid-teal opacity-30" />
         <div className="absolute inset-0 bg-grain" />
-        <FrostField count={20} className="opacity-50" />
-        <FloatingShape shape="drop" className="absolute top-24 right-[10%] text-orange/25 hidden lg:block" size={56} delay={0.2} />
+        <div className="absolute inset-x-0 top-10 h-56 bg-[radial-gradient(circle_at_top,rgba(79,174,150,0.18),transparent_60%)]" />
+        <div className="absolute right-[10%] top-24 hidden h-16 w-16 rounded-full border border-orange/20 bg-orange/10 lg:block" />
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <div className="relative mx-auto max-w-7xl px-6">
           <div className="max-w-3xl">
-            <Reveal><Kicker>{c.contact.kicker}</Kicker></Reveal>
-            <Reveal delay={0.1}>
-              <h1 className="mt-5 font-serif-display text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight tracking-tight text-balance">
-                <span className="block text-foreground">{c.contact.title.split(" ").slice(0, 2).join(" ")}</span>
-                <span className="block text-gradient-teal mt-2">{c.contact.title.split(" ").slice(2).join(" ")}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
-              <AnimatedUnderline className="mt-6 w-32" />
-              <p className="mt-6 text-base lg:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-                {c.contact.desc}
-              </p>
-            </Reveal>
+            <div className="inline-flex items-center gap-2">
+              <span className="h-px w-8 bg-orange" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-orange">
+                {c.contact.kicker}
+              </span>
+            </div>
+
+            <h1 className="mt-5 font-serif-display text-3xl font-bold leading-tight tracking-tight text-balance sm:text-4xl lg:text-5xl xl:text-6xl">
+              <span className="block text-foreground">{titleStart}</span>
+              <span className="mt-2 block text-gradient-teal">{titleEnd}</span>
+            </h1>
+
+            <div className="mt-6 h-[3px] w-32 rounded-full bg-orange" />
+
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground lg:text-lg">
+              {c.contact.desc}
+            </p>
           </div>
         </div>
 
         <div className="relative mt-12 border-y border-teal/15 bg-teal/5 py-3">
-          <Marquee>
-            {[
-              dir === "rtl" ? "رد خلال 1 يوم عمل" : "Response in 1 business day",
-              dir === "rtl" ? "بيانات كاملة = رد أسرع" : "More details = faster response",
-              dir === "rtl" ? "متابعة واتساب احترافية" : "Professional WhatsApp follow-up",
-              dir === "rtl" ? "نؤهل استفسارك بكل احترام" : "We qualify your inquiry respectfully",
-            ].map((s, i) => (
-              <span key={i} className="inline-flex items-center gap-3 mx-6 text-sm font-serif-display font-semibold text-teal">
-                <Sparkles className="w-3.5 h-3.5 text-orange" />
-                {s}
-              </span>
-            ))}
-          </Marquee>
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              {stripItems.map((item) => (
+                <span key={item} className="inline-flex items-center gap-3 text-sm font-serif-display font-semibold text-teal">
+                  <Sparkles className="h-3.5 w-3.5 text-orange" />
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* MAIN: FORM + CHANNELS */}
       <section className="relative py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-12 gap-10">
-            {/* FORM */}
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-7">
-              <div className="relative rounded-3xl bg-card border border-teal/15 p-6 lg:p-8 shadow-xl">
-                <AnimatePresence mode="wait">
-                  {!submitted ? (
-                    <motion.form
-                      key="form"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      onSubmit={handleSubmit}
-                      className="space-y-5"
-                    >
-                      {/* Honeypot field — hidden from humans, bots fill it */}
-                      <input
-                        type="text"
-                        name="website"
-                        tabIndex={-1}
-                        autoComplete="off"
-                        aria-hidden
-                        style={{ position: "absolute", left: "-9999px", top: 0, width: 1, height: 1, opacity: 0 }}
-                        value={form.website || ""}
-                        onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
+              <div className="relative rounded-3xl border border-teal/15 bg-card p-6 shadow-xl lg:p-8">
+                {!submitted ? (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <input
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden
+                      style={{ position: "absolute", left: "-9999px", top: 0, width: 1, height: 1, opacity: 0 }}
+                      value={form.website}
+                      onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))}
+                    />
+
+                    <div>
+                      <div className="mb-1 text-xs font-bold uppercase tracking-widest text-orange">
+                        {dir === "rtl" ? "بيانات أساسية" : "Required fields"}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {dir === "rtl"
+                          ? "نحتاج بيانات كافية لتأهيلك — ليس إرهاقك بالحقول."
+                          : "We need enough info to qualify you — not endless fields."}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <ValidatedField
+                        label={c.contact.form.name}
+                        value={form.name}
+                        onChange={(value) => update("name", value)}
+                        onBlur={() => markTouched("name")}
+                        status={getStatus("name")}
+                        error={getErrorMsg("name")}
+                        icon={<User className="h-4 w-4" />}
                       />
-                      <div>
-                        <div className="text-xs uppercase tracking-widest text-orange font-bold mb-1">
-                          {dir === "rtl" ? "بيانات أساسية" : "Required fields"}
+                      <ValidatedField
+                        label={c.contact.form.company}
+                        value={form.company}
+                        onChange={(value) => update("company", value)}
+                        onBlur={() => markTouched("company")}
+                        status={getStatus("company")}
+                        error={getErrorMsg("company")}
+                        icon={<Building2 className="h-4 w-4" />}
+                      />
+                      <ValidatedField
+                        label={c.contact.form.country}
+                        value={form.country}
+                        onChange={(value) => update("country", value)}
+                        onBlur={() => markTouched("country")}
+                        status={getStatus("country")}
+                        error={getErrorMsg("country")}
+                        icon={<Globe2 className="h-4 w-4" />}
+                      />
+                      <WhatsAppField
+                        label={c.contact.form.whatsapp}
+                        value={form.whatsapp}
+                        onChange={(value) => update("whatsapp", value)}
+                        onBlur={() => markTouched("whatsapp")}
+                        status={getStatus("whatsapp")}
+                        error={getErrorMsg("whatsapp")}
+                        selectedRule={selectedRule}
+                        onRuleChange={setSelectedRule}
+                        rules={PHONE_RULES}
+                        dir={dir}
+                      />
+                      <ValidatedField
+                        label={c.contact.form.email}
+                        value={form.email}
+                        onChange={(value) => update("email", value)}
+                        onBlur={() => markTouched("email")}
+                        status={getStatus("email")}
+                        error={getErrorMsg("email")}
+                        type="email"
+                        icon={<Mail className="h-4 w-4" />}
+                        placeholder="you@company.com"
+                        inputDir="ltr"
+                      />
+                      <ValidatedField
+                        label={c.contact.form.use}
+                        value={form.use}
+                        onChange={(value) => update("use", value)}
+                        icon={<FileText className="h-4 w-4" />}
+                      />
+                    </div>
+
+                    <div className="border-t border-teal/10 pt-4">
+                      <div className="mb-3 text-xs font-bold uppercase tracking-widest text-teal">
+                        {dir === "rtl"
+                          ? "تفاصيل الطلب (اختياري لكن مفيد)"
+                          : "Order details (optional but helpful)"}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <ValidatedField
+                        label={c.contact.form.product}
+                        value={form.product}
+                        onChange={(value) => update("product", value)}
+                        icon={<FileText className="h-4 w-4" />}
+                      />
+                      <ValidatedField
+                        label={c.contact.form.quantity}
+                        value={form.quantity}
+                        onChange={(value) => update("quantity", value)}
+                        icon={<FileText className="h-4 w-4" />}
+                        placeholder={dir === "rtl" ? "مثلاً: 5 أطنان" : "e.g. 5 tons"}
+                      />
+                      <ValidatedField
+                        label={c.contact.form.packing}
+                        value={form.packing}
+                        onChange={(value) => update("packing", value)}
+                        icon={<FileText className="h-4 w-4" />}
+                      />
+                      <ValidatedField
+                        label={c.contact.form.port}
+                        value={form.port}
+                        onChange={(value) => update("port", value)}
+                        icon={<Globe2 className="h-4 w-4" />}
+                        placeholder={dir === "rtl" ? "مثلاً: جدة" : "e.g. Jeddah"}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                        {c.contact.form.message}
+                      </label>
+                      <textarea
+                        value={form.message}
+                        onChange={(e) => update("message", e.target.value)}
+                        rows={4}
+                        className="w-full resize-none rounded-xl border border-teal/15 bg-secondary/60 px-4 py-3 text-sm outline-none transition-colors focus:border-teal focus:ring-2 focus:ring-teal/20"
+                        placeholder={dir === "rtl"
+                          ? "أي تفاصيل إضافية تساعدنا نرد بشكل أدق…"
+                          : "Any extra details that help us respond more accurately…"}
+                      />
+                    </div>
+
+                    {Object.values(touched).some(Boolean) &&
+                      !allRequiredValid() &&
+                      Object.values(touched).filter(Boolean).length >= 2 && (
+                        <div className="flex items-center gap-2 rounded-xl border border-orange/25 bg-orange/8 p-3 text-xs text-orange">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          {dir === "rtl"
+                            ? "يرجى مراجعة الحقول المظللة بالأحمر والتأكد من صحة البيانات."
+                            : "Please review the highlighted fields and ensure all data is correct."}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {dir === "rtl" ? "نحتاج بيانات كافية لتأهيلك — ليس إرهاقك بالحقول." : "We need enough info to qualify you — not endless fields."}
-                        </p>
-                      </div>
-
-                      {/* Required row */}
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <ValidatedField
-                          label={c.contact.form.name}
-                          value={form.name}
-                          onChange={(v) => update("name", v)}
-                          onBlur={() => markTouched("name")}
-                          status={getStatus("name")}
-                          error={getErrorMsg("name")}
-                          icon={<User className="w-4 h-4" />}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.company}
-                          value={form.company}
-                          onChange={(v) => update("company", v)}
-                          onBlur={() => markTouched("company")}
-                          status={getStatus("company")}
-                          error={getErrorMsg("company")}
-                          icon={<Building2 className="w-4 h-4" />}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.country}
-                          value={form.country}
-                          onChange={(v) => update("country", v)}
-                          onBlur={() => markTouched("country")}
-                          status={getStatus("country")}
-                          error={getErrorMsg("country")}
-                          icon={<Globe2 className="w-4 h-4" />}
-                        />
-                        <WhatsAppField
-                          label={c.contact.form.whatsapp}
-                          value={form.whatsapp}
-                          onChange={(v) => update("whatsapp", v)}
-                          onBlur={() => markTouched("whatsapp")}
-                          status={getStatus("whatsapp")}
-                          error={getErrorMsg("whatsapp")}
-                          selectedRule={selectedRule}
-                          onRuleChange={setSelectedRule}
-                          rules={PHONE_RULES}
-                          dir={dir}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.email}
-                          value={form.email}
-                          onChange={(v) => update("email", v)}
-                          onBlur={() => markTouched("email")}
-                          status={getStatus("email")}
-                          error={getErrorMsg("email")}
-                          type="email"
-                          icon={<Mail className="w-4 h-4" />}
-                          placeholder="you@company.com"
-                          inputDir="ltr"
-                        />
-                        <ValidatedField
-                          label={c.contact.form.use}
-                          value={form.use}
-                          onChange={(v) => update("use", v)}
-                          icon={<FileText className="w-4 h-4" />}
-                        />
-                      </div>
-
-                      {/* Divider */}
-                      <div className="pt-4 border-t border-teal/10">
-                        <div className="text-xs uppercase tracking-widest text-teal font-bold mb-3">
-                          {dir === "rtl" ? "تفاصيل الطلب (اختياري لكن مفيد)" : "Order details (optional but helpful)"}
-                        </div>
-                      </div>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <ValidatedField
-                          label={c.contact.form.product}
-                          value={form.product}
-                          onChange={(v) => update("product", v)}
-                          icon={<FileText className="w-4 h-4" />}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.quantity}
-                          value={form.quantity}
-                          onChange={(v) => update("quantity", v)}
-                          icon={<FileText className="w-4 h-4" />}
-                          placeholder={dir === "rtl" ? "مثلاً: 5 أطنان" : "e.g. 5 tons"}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.packing}
-                          value={form.packing}
-                          onChange={(v) => update("packing", v)}
-                          icon={<FileText className="w-4 h-4" />}
-                        />
-                        <ValidatedField
-                          label={c.contact.form.port}
-                          value={form.port}
-                          onChange={(v) => update("port", v)}
-                          icon={<Globe2 className="w-4 h-4" />}
-                          placeholder={dir === "rtl" ? "مثلاً: جدة" : "e.g. Jeddah"}
-                        />
-                      </div>
-
-                      {/* Message */}
-                      <div>
-                        <label className="block text-xs font-semibold text-foreground mb-1.5">
-                          {c.contact.form.message}
-                        </label>
-                        <textarea
-                          value={form.message}
-                          onChange={(e) => update("message", e.target.value)}
-                          rows={4}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary/60 border border-teal/15 focus:border-teal focus:ring-2 focus:ring-teal/20 outline-none text-sm resize-none transition-colors"
-                          placeholder={dir === "rtl" ? "أي تفاصيل إضافية تساعدنا نرد بشكل أدق…" : "Any extra details that help us respond more accurately…"}
-                        />
-                      </div>
-
-                      {/* Validation summary */}
-                      {Object.values(touched).some(Boolean) && !allRequiredValid() && Object.values(touched).filter(Boolean).length >= 2 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 p-3 rounded-xl bg-orange/8 border border-orange/25 text-xs text-orange"
-                        >
-                          <AlertCircle className="w-4 h-4 shrink-0" />
-                          {dir === "rtl" ? "يرجى مراجعة الحقول المظللة بالأحمر والتأكد من صحة البيانات." : "Please review the highlighted fields and ensure all data is correct."}
-                        </motion.div>
                       )}
 
-                      {/* Submit */}
-                      <Magnetic strength={0.1}>
-                        <button
-                          type="submit"
-                          disabled={loading}
-                          className="shine-hover w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-orange text-orange-foreground font-semibold shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors disabled:opacity-60"
-                        >
-                          {loading ? (
-                            <>
-                              <motion.span
-                                className="w-4 h-4 border-2 border-orange-foreground/30 border-t-orange-foreground rounded-full"
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                              />
-                              {dir === "rtl" ? "جارٍ الإرسال…" : "Sending…"}
-                            </>
-                          ) : (
-                            <>
-                              <Send className="w-4 h-4" />
-                              {c.contact.form.submit}
-                            </>
-                          )}
-                        </button>
-                      </Magnetic>
-                    </motion.form>
-                  ) : (
-                    <motion.div
-                      key="success"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-center py-10"
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-orange px-7 font-semibold text-orange-foreground shadow-md shadow-orange/25 transition-colors hover:bg-orange-dark disabled:opacity-60 sm:w-auto"
                     >
-                      <div className="mx-auto w-20 h-20 rounded-full bg-teal/10 text-teal flex items-center justify-center mb-6">
-                        <CheckCircle2 className="w-10 h-10" />
-                      </div>
-                      <h3 className="font-serif-display text-3xl font-bold">{c.contact.form.successTitle}</h3>
-                      <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                        {c.contact.form.successDesc}
-                      </p>
-                      <div className="mt-7 flex flex-wrap gap-3 justify-center">
-                        <a
-                          href={`https://wa.me/${siteSettings.whatsappNumber}?text=${encodeURIComponent(c.whatsapp.msg)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[#25D366] text-white font-semibold text-sm hover:bg-[#1FB855] transition-colors"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          {c.contact.channels.whatsapp}
-                        </a>
-                        <button
-                          onClick={reset}
-                          className="inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-teal text-teal font-semibold text-sm hover:bg-teal hover:text-teal-foreground transition-colors"
-                        >
-                          {c.contact.form.sendAnother}
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      {loading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-orange-foreground/30 border-t-orange-foreground" />
+                          {dir === "rtl" ? "جارٍ الإرسال…" : "Sending…"}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          {c.contact.form.submit}
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="py-10 text-center">
+                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-teal/10 text-teal">
+                      <CheckCircle2 className="h-10 w-10" />
+                    </div>
+                    <h3 className="font-serif-display text-3xl font-bold">
+                      {c.contact.form.successTitle}
+                    </h3>
+                    <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+                      {c.contact.form.successDesc}
+                    </p>
+                    <div className="mt-7 flex flex-wrap justify-center gap-3">
+                      <a
+                        href={`https://wa.me/${siteSettings.whatsappNumber}?text=${encodeURIComponent(c.whatsapp.msg)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#1FB855]"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {c.contact.channels.whatsapp}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="inline-flex h-11 items-center gap-2 rounded-full border-2 border-teal px-5 text-sm font-semibold text-teal transition-colors hover:bg-teal hover:text-teal-foreground"
+                      >
+                        {c.contact.form.sendAnother}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* CHANNELS */}
             <div className="lg:col-span-5">
-              <StaggerGroup className="space-y-3">
-                <motion.div variants={staggerItem}>
-                  <ChannelCard
-                    icon={<MessageCircle className="w-5 h-5" />}
-                    title={c.contact.channels.whatsapp}
-                    value={siteSettings.whatsappDisplay}
-                    href={`https://wa.me/${siteSettings.whatsappNumber}?text=${encodeURIComponent(c.whatsapp.msg)}`}
-                    highlight
-                  />
-                </motion.div>
-                <motion.div variants={staggerItem}>
-                  <ChannelCard
-                    icon={<Mail className="w-5 h-5" />}
-                    title={c.contact.channels.email}
-                    value="info@snack-fruits.com"
-                    href="mailto:info@snack-fruits.com"
-                  />
-                </motion.div>
-                <motion.div variants={staggerItem}>
-                  <ChannelCard
-                    icon={<MapPin className="w-5 h-5" />}
-                    title={dir === "rtl" ? "الموقع" : "Location"}
-                    value={c.contact.channels.location}
-                  />
-                </motion.div>
-                <motion.div variants={staggerItem}>
-                  <ChannelCard
-                    icon={<Clock3 className="w-5 h-5" />}
-                    title={dir === "rtl" ? "ساعات العمل" : "Working hours"}
-                    value={c.contact.channels.hours}
-                  />
-                </motion.div>
-              </StaggerGroup>
+              <div className="space-y-3">
+                <ChannelCard
+                  icon={<MessageCircle className="h-5 w-5" />}
+                  title={c.contact.channels.whatsapp}
+                  value={siteSettings.whatsappDisplay}
+                  href={`https://wa.me/${siteSettings.whatsappNumber}?text=${encodeURIComponent(c.whatsapp.msg)}`}
+                  highlight
+                />
+                <ChannelCard
+                  icon={<Mail className="h-5 w-5" />}
+                  title={c.contact.channels.email}
+                  value="info@snack-fruits.com"
+                  href="mailto:info@snack-fruits.com"
+                />
+                <ChannelCard
+                  icon={<MapPin className="h-5 w-5" />}
+                  title={dir === "rtl" ? "الموقع" : "Location"}
+                  value={c.contact.channels.location}
+                />
+                <ChannelCard
+                  icon={<Clock3 className="h-5 w-5" />}
+                  title={dir === "rtl" ? "ساعات العمل" : "Working hours"}
+                  value={c.contact.channels.hours}
+                />
+              </div>
 
-              {/* CRM flow */}
-              <Reveal delay={0.3}>
-                <div className="mt-6 rounded-2xl bg-gradient-to-br from-teal/8 to-orange/8 border border-teal/15 p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-9 h-9 rounded-lg bg-teal/10 text-teal flex items-center justify-center">
-                      <FileText className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{c.contact.flow.title.split(" ").slice(0, 2).join(" ")}</div>
-                      <div className="text-sm font-semibold">{c.contact.flow.title.split(" ").slice(2).join(" ")}</div>
-                    </div>
+              <div className="mt-6 rounded-2xl border border-teal/15 bg-gradient-to-br from-teal/8 to-orange/8 p-5">
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                    <FileText className="h-4.5 w-4.5" />
                   </div>
-                  <ol className="space-y-2.5">
-                    {c.contact.flow.steps.map((s, i) => (
-                      <li key={i} className="flex items-center gap-3 text-xs">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-teal text-teal-foreground flex items-center justify-center font-bold text-[10px]">
-                          {i + 1}
-                        </span>
-                        <span className="text-muted-foreground">{s}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {flowTitleStart}
+                    </div>
+                    <div className="text-sm font-semibold">{flowTitleEnd}</div>
+                  </div>
                 </div>
-              </Reveal>
+                <ol className="space-y-2.5">
+                  {c.contact.flow.steps.map((step, index) => (
+                    <li key={step} className="flex items-center gap-3 text-xs">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-teal-foreground">
+                        {index + 1}
+                      </span>
+                      <span className="text-muted-foreground">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             </div>
           </div>
         </div>
@@ -594,16 +603,21 @@ export function ContactPage() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   VALIDATED FIELD — with real-time status indicators
-   ═══════════════════════════════════════════════════════════════════════ */
-
 function ValidatedField({
-  label, value, onChange, onBlur, status = "neutral", error, icon, type = "text", placeholder, inputDir,
+  label,
+  value,
+  onChange,
+  onBlur,
+  status = "neutral",
+  error,
+  icon,
+  type = "text",
+  placeholder,
+  inputDir,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   onBlur?: () => void;
   status?: FieldStatus;
   error?: string;
@@ -612,26 +626,20 @@ function ValidatedField({
   placeholder?: string;
   inputDir?: "ltr" | "rtl";
 }) {
-  const borderCls = status === "error"
+  const borderClass = status === "error"
     ? "border-red-500/60 bg-red-500/5 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
     : status === "valid"
       ? "border-teal/50 bg-teal/5 focus:border-teal focus:ring-2 focus:ring-teal/20"
       : "border-teal/15 focus:border-teal focus:ring-2 focus:ring-teal/20";
 
-  const StatusIcon = () => {
-    if (status === "valid") return <Check className="w-3.5 h-3.5 text-teal" />;
-    if (status === "error") return <X className="w-3.5 h-3.5 text-red-500" />;
-    return null;
-  };
-
   return (
     <div className="flex flex-col">
-      <label className="block text-xs font-semibold text-foreground mb-1.5">
+      <label className="mb-1.5 block text-xs font-semibold text-foreground">
         {label}
       </label>
       <div className="relative flex items-center">
         {icon && (
-          <span className={`absolute ${inputDir === "ltr" ? "left-3" : "right-3"} text-muted-foreground pointer-events-none`}>
+          <span className={`pointer-events-none absolute text-muted-foreground ${inputDir === "ltr" ? "left-3" : "right-3"}`}>
             {icon}
           </span>
         )}
@@ -642,40 +650,38 @@ function ValidatedField({
           onBlur={onBlur}
           placeholder={placeholder}
           dir={inputDir}
-          className={`w-full ${icon ? (inputDir === "ltr" ? "pl-10 pr-9" : "pr-10 pl-9") : "px-4 pr-9"} py-3 rounded-xl bg-secondary/60 border outline-none text-sm transition-all duration-200 ${borderCls}`}
+          className={`w-full rounded-xl border bg-secondary/60 py-3 text-sm outline-none transition-all duration-200 ${icon ? (inputDir === "ltr" ? "pl-10 pr-9" : "pl-9 pr-10") : "px-4 pr-9"} ${borderClass}`}
         />
-        <span className={`absolute ${inputDir === "ltr" ? "right-3" : "left-3"} pointer-events-none transition-all duration-200`}>
-          <StatusIcon />
+        <span className={`pointer-events-none absolute ${inputDir === "ltr" ? "right-3" : "left-3"}`}>
+          {status === "valid" && <Check className="h-3.5 w-3.5 text-teal" />}
+          {status === "error" && <X className="h-3.5 w-3.5 text-red-500" />}
         </span>
       </div>
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -5 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -5 }}
-            className="flex items-center gap-1.5 mt-1.5 text-[11px] font-medium text-red-500"
-          >
-            <AlertCircle className="w-3 h-3 shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {error && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-red-500">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   WHATSAPP FIELD — custom dropdown + per-country validation
-   ═══════════════════════════════════════════════════════════════════════ */
-
 function WhatsAppField({
-  label, value, onChange, onBlur, status = "neutral", error,
-  selectedRule, onRuleChange, rules, dir,
+  label,
+  value,
+  onChange,
+  onBlur,
+  status = "neutral",
+  error,
+  selectedRule,
+  onRuleChange,
+  rules,
+  dir,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   onBlur?: () => void;
   status?: FieldStatus;
   error?: string;
@@ -686,188 +692,174 @@ function WhatsAppField({
 }) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Close on click outside
   React.useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    if (!open) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false);
         setSearch("");
       }
-    }
-    if (open) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [open]);
 
-  // Focus search when opened
   React.useEffect(() => {
-    if (open && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    if (open) searchInputRef.current?.focus();
   }, [open]);
 
-  const filtered = rules.filter((r) =>
-    r.label.includes(search) ||
-    r.labelEn.toLowerCase().includes(search.toLowerCase()) ||
-    r.code.includes(search)
-  );
+  const filteredRules = React.useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return rules;
+    return rules.filter((rule) =>
+      rule.label.includes(search) ||
+      rule.labelEn.toLowerCase().includes(query) ||
+      rule.code.includes(query)
+    );
+  }, [rules, search]);
 
   const digits = value.replace(/[^0-9]/g, "");
   const digitInfo = `${digits.length}/${selectedRule.minDigits === selectedRule.maxDigits ? selectedRule.minDigits : `${selectedRule.minDigits}-${selectedRule.maxDigits}`}`;
 
-  const borderCls = status === "error"
+  const borderClass = status === "error"
     ? "border-red-500/60 bg-red-500/5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20"
     : status === "valid"
       ? "border-teal/50 bg-teal/5 focus-within:border-teal focus-within:ring-2 focus-within:ring-teal/20"
       : "border-teal/15 focus-within:border-teal focus-within:ring-2 focus-within:ring-teal/20";
 
   return (
-    <div className="flex flex-col" ref={dropdownRef}>
-      <label className="block text-xs font-semibold text-foreground mb-1.5">
+    <div ref={containerRef} className="flex flex-col">
+      <label className="mb-1.5 block text-xs font-semibold text-foreground">
         {label}
       </label>
-      <div className={`relative flex items-stretch h-[46px] rounded-xl bg-secondary/60 border transition-all duration-200 ${borderCls}`}>
-        {/* Custom country dropdown trigger */}
+      <div className={`relative flex h-[46px] items-stretch rounded-xl border bg-secondary/60 transition-all duration-200 ${borderClass}`}>
         <button
           type="button"
-          onClick={() => { setOpen(!open); setSearch(""); }}
-          className="relative flex items-center gap-1.5 shrink-0 px-3 border-r border-teal/15 hover:bg-teal/5 transition-colors rounded-l-xl"
+          onClick={() => {
+            setOpen((prev) => !prev);
+            setSearch("");
+          }}
+          className="relative flex shrink-0 items-center gap-1.5 rounded-l-xl border-r border-teal/15 px-3 transition-colors hover:bg-teal/5"
           dir="ltr"
         >
           <span className="text-base leading-none">{selectedRule.flag}</span>
           <span className="text-xs font-semibold text-foreground">{selectedRule.code}</span>
-          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
 
-        {/* Custom dropdown panel */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full left-0 mt-2 z-50 w-72 max-h-80 rounded-2xl bg-card border border-teal/20 shadow-2xl shadow-black/20 overflow-hidden"
-            >
-              {/* Search bar */}
-              <div className="p-2 border-b border-teal/10">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={dir === "rtl" ? "بحث عن الدولة…" : "Search country…"}
-                    className="w-full pl-8 pr-3 py-2 rounded-lg bg-secondary/60 border border-teal/10 text-xs outline-none focus:border-teal/30 transition-colors"
-                    dir={dir}
-                  />
+        {open && (
+          <div className="absolute left-0 top-full z-50 mt-2 max-h-80 w-72 overflow-hidden rounded-2xl border border-teal/20 bg-card shadow-2xl shadow-black/20">
+            <div className="border-b border-teal/10 p-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={dir === "rtl" ? "بحث عن الدولة…" : "Search country…"}
+                  className="w-full rounded-lg border border-teal/10 bg-secondary/60 py-2 pl-8 pr-3 text-xs outline-none transition-colors focus:border-teal/30"
+                  dir={dir}
+                />
+              </div>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto overscroll-contain">
+              {filteredRules.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  {dir === "rtl" ? "لا توجد نتائج" : "No results"}
                 </div>
-              </div>
-
-              {/* List */}
-              <div className="overflow-y-auto max-h-60 overscroll-contain">
-                {filtered.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-muted-foreground">
-                    {dir === "rtl" ? "لا توجد نتائج" : "No results"}
-                  </div>
-                ) : (
-                  filtered.map((rule) => (
-                    <button
-                      key={rule.code}
-                      type="button"
-                      onClick={() => {
-                        onRuleChange(rule);
-                        setOpen(false);
-                        setSearch("");
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-teal/8 transition-colors ${selectedRule.code === rule.code ? "bg-teal/10" : ""
-                        }`}
-                      dir="ltr"
-                    >
-                      <span className="text-lg leading-none">{rule.flag}</span>
-                      <span className="flex-1 text-left">
-                        <span className="font-semibold text-foreground text-xs">{dir === "rtl" ? rule.label : rule.labelEn}</span>
+              ) : (
+                filteredRules.map((rule) => (
+                  <button
+                    key={rule.code}
+                    type="button"
+                    onClick={() => {
+                      onRuleChange(rule);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-teal/8 ${selectedRule.code === rule.code ? "bg-teal/10" : ""}`}
+                    dir="ltr"
+                  >
+                    <span className="text-lg leading-none">{rule.flag}</span>
+                    <span className="flex-1 text-left">
+                      <span className="text-xs font-semibold text-foreground">
+                        {dir === "rtl" ? rule.label : rule.labelEn}
                       </span>
-                      <span className="text-xs font-mono text-muted-foreground">{rule.code}</span>
-                      {selectedRule.code === rule.code && (
-                        <Check className="w-3.5 h-3.5 text-teal" />
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    </span>
+                    <span className="text-xs text-muted-foreground">{rule.code}</span>
+                    {selectedRule.code === rule.code && <Check className="h-3.5 w-3.5 text-teal" />}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
-        {/* Phone input */}
-        <div className="relative flex-1 flex items-center">
-          <Phone className="absolute left-3 text-muted-foreground pointer-events-none w-4 h-4" />
+        <div className="relative flex flex-1 items-center">
+          <Phone className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
           <input
             type="tel"
             value={value}
-            onChange={(e) => {
-              // Only allow numbers
-              const cleaned = e.target.value.replace(/[^0-9]/g, "");
-              onChange(cleaned);
-            }}
+            onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
             onBlur={onBlur}
             placeholder={selectedRule.code === "+966" ? "5xx xxx xxx" : selectedRule.code === "+20" ? "1xx xxxx xxxx" : "xxx xxx xxxx"}
             dir="ltr"
-            className={`w-full h-full bg-transparent outline-none text-sm pl-10 pr-16 ${status === "error" ? "text-red-500 placeholder:text-red-500/40" : ""}`}
+            className={`h-full w-full bg-transparent pl-10 pr-16 text-sm outline-none ${status === "error" ? "text-red-500 placeholder:text-red-500/40" : ""}`}
           />
-          {/* Digit counter + status icon */}
-          <span className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
-            <span className={`text-[10px] font-mono tabular-nums ${status === "valid" ? "text-teal" : status === "error" ? "text-red-500" : "text-muted-foreground"
-              }`}>
+          <span className="pointer-events-none absolute right-3 flex items-center gap-1.5">
+            <span className={`text-[10px] tabular-nums ${status === "valid" ? "text-teal" : status === "error" ? "text-red-500" : "text-muted-foreground"}`}>
               {digits.length > 0 && digitInfo}
             </span>
-            {status === "valid" && <Check className="w-3.5 h-3.5 text-teal" />}
-            {status === "error" && <X className="w-3.5 h-3.5 text-red-500" />}
+            {status === "valid" && <Check className="h-3.5 w-3.5 text-teal" />}
+            {status === "error" && <X className="h-3.5 w-3.5 text-red-500" />}
           </span>
         </div>
       </div>
 
-      {/* Hint: what this country expects */}
       {digits.length > 0 && status !== "valid" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-1 text-[10px] text-muted-foreground"
-        >
-          {selectedRule.flag} {dir === "rtl"
+        <div className="mt-1 text-[10px] text-muted-foreground">
+          {selectedRule.flag}{" "}
+          {dir === "rtl"
             ? `${selectedRule.label}: ${selectedRule.minDigits === selectedRule.maxDigits ? selectedRule.minDigits : `${selectedRule.minDigits}-${selectedRule.maxDigits}`} رقم${selectedRule.prefix ? ` يبدأ بـ ${selectedRule.prefix}` : ""}`
-            : `${selectedRule.labelEn}: ${selectedRule.minDigits === selectedRule.maxDigits ? selectedRule.minDigits : `${selectedRule.minDigits}-${selectedRule.maxDigits}`} digits${selectedRule.prefix ? ` starting with ${selectedRule.prefix}` : ""}`
-          }
-        </motion.div>
+            : `${selectedRule.labelEn}: ${selectedRule.minDigits === selectedRule.maxDigits ? selectedRule.minDigits : `${selectedRule.minDigits}-${selectedRule.maxDigits}`} digits${selectedRule.prefix ? ` starting with ${selectedRule.prefix}` : ""}`}
+        </div>
       )}
 
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -5 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -5 }}
-            className="flex items-center gap-1.5 mt-1.5 text-[11px] font-medium text-red-500"
-          >
-            <AlertCircle className="w-3 h-3 shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {error && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-red-500">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   CHANNEL CARD
-   ═══════════════════════════════════════════════════════════════════════ */
-
 function ChannelCard({
-  icon, title, value, href, highlight,
+  icon,
+  title,
+  value,
+  href,
+  highlight,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -875,20 +867,27 @@ function ChannelCard({
   href?: string;
   highlight?: boolean;
 }) {
-  const inner = (
-    <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-colors hover-lift ${highlight
-        ? "bg-teal/8 border-teal/20 hover:border-teal/40"
-        : "bg-card border-teal/12 hover:border-teal/30"
-      }`}>
-      <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${highlight ? "bg-orange text-orange-foreground" : "bg-teal/10 text-teal"
-        }`}>
+  const content = (
+    <div className={`flex items-center gap-4 rounded-2xl border p-4 transition-colors ${highlight ? "border-teal/20 bg-teal/8 hover:border-teal/40" : "border-teal/12 bg-card hover:border-teal/30"}`}>
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${highlight ? "bg-orange text-orange-foreground" : "bg-teal/10 text-teal"}`}>
         {icon}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{title}</div>
-        <div className="text-sm font-bold mt-0.5 truncate" dir="ltr">{value}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {title}
+        </div>
+        <div className="mt-0.5 truncate text-sm font-bold" dir="ltr">
+          {value}
+        </div>
       </div>
     </div>
   );
-  return href ? <a href={href} target="_blank" rel="noopener noreferrer" className="block">{inner}</a> : inner;
+
+  if (!href) return content;
+
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="block">
+      {content}
+    </a>
+  );
 }
