@@ -104,6 +104,28 @@ export function Header() {
             <nav className="hidden lg:flex items-center gap-1">
               {items.map((item) => {
                 const active = page === item.id;
+                if (item.id === "contact") {
+                  return (
+                    <a
+                      key={item.id}
+                      href="/contact-version-2"
+                      className={`relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        active
+                          ? "text-teal"
+                          : "text-foreground/75 hover:text-teal"
+                      }`}
+                    >
+                      {item.label}
+                      {active && (
+                        <motion.span
+                          layoutId="nav-active"
+                          className="absolute inset-x-2 -bottom-0.5 h-0.5 bg-orange rounded-full"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                    </a>
+                  );
+                }
                 return (
                   <button
                     key={item.id}
@@ -168,20 +190,35 @@ export function Header() {
           >
             <div className="px-4 py-4 space-y-1">
               {items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    navigate(item.id);
-                    setOpen(false);
-                  }}
-                  className={`w-full text-${dir === "rtl" ? "right" : "left"} px-4 py-3 rounded-lg text-sm font-medium ${
-                    page === item.id
-                      ? "bg-teal/10 text-teal"
-                      : "text-foreground/80 hover:bg-muted"
-                  }`}
-                >
-                  {item.label}
-                </button>
+                item.id === "contact" ? (
+                  <a
+                    key={item.id}
+                    href="/contact-version-2"
+                    onClick={() => setOpen(false)}
+                    className={`block w-full text-${dir === "rtl" ? "right" : "left"} px-4 py-3 rounded-lg text-sm font-medium ${
+                      page === item.id
+                        ? "bg-teal/10 text-teal"
+                        : "text-foreground/80 hover:bg-muted"
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      navigate(item.id);
+                      setOpen(false);
+                    }}
+                    className={`w-full text-${dir === "rtl" ? "right" : "left"} px-4 py-3 rounded-lg text-sm font-medium ${
+                      page === item.id
+                        ? "bg-teal/10 text-teal"
+                        : "text-foreground/80 hover:bg-muted"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                )
               ))}
               <a
                 href="/contact-version-2"

@@ -25,17 +25,32 @@ export function useNav() {
   return c;
 }
 
-export function NavProvider({ children, floating }: { children: ReactNode; floating?: ReactNode }) {
-  const [page, setPage] = useState<PageId>("home");
+export function NavProvider({
+  children,
+  floating,
+  initialPage = "home",
+  navigateOverride,
+}: {
+  children: ReactNode;
+  floating?: ReactNode;
+  initialPage?: PageId;
+  navigateOverride?: (page: PageId) => void;
+}) {
+  const [page, setPage] = useState<PageId>(initialPage);
 
   const navigate = useCallback((p: PageId) => {
+    if (navigateOverride) {
+      navigateOverride(p);
+      return;
+    }
     setPage(p);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, []);
+  }, [navigateOverride]);
 
   useEffect(() => {
+    if (navigateOverride) return;
     if (typeof window === "undefined") return;
     const onPop = () => {
       const hash = window.location.hash.replace("#", "") as PageId;
@@ -43,13 +58,14 @@ export function NavProvider({ children, floating }: { children: ReactNode; float
     };
     window.addEventListener("hashchange", onPop);
     return () => window.removeEventListener("hashchange", onPop);
-  }, []);
+  }, [navigateOverride]);
 
   useEffect(() => {
+    if (navigateOverride) return;
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", `#${page}`);
     }
-  }, [page]);
+  }, [navigateOverride, page]);
 
   return (
     <Ctx.Provider value={{ page, navigate }}>
