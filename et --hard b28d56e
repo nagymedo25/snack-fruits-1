@@ -1,0 +1,20 @@
+[33m7131de1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m ثقثقثقثق
+[33mf79dd71[m Fix Contact 6
+[33mb28d56e[m Merge original Contact UI/UX with stable glitch-free architecture
+[33mc6d24c8[m Finalize isolated Contact Page Implementation
+[33mbce8abd[m Add isolated /test route for debugging
+[33m8dc8037[m Fix Contact 5
+[33m4c1ea67[m Fix Contact 4
+[33mef2d71e[m Fix Contact 3
+[33m326c28f[m Fix Contact 2
+[33m4f5deb4[m Fix Contact 1
+[33md932eda[m Final
+[33m5e54975[m feat(email): require Brevo email delivery to succeed, rollback database lead otherwise, show client-side error toast
+[33mdd2eff5[m fix(types): resolve TS compile errors in animation, language-provider, and use-site-settings
+[33m6189e52[m feat(email): migrate to Brevo transactional email API, remove Resend & nodemailer SMTP
+[33m40a06ed[m feat(api): add robust JSON logging for Resend API requests
+[33m4ed3035[m fix: switch to Resend API for email sending on Vercel (SMTP blocked on serverless)
+[33md35f8ca[m fix: resolve correct production origin dynamically from headers for CRM link in email body
+[33mf758882[m feat: upgrade contact form validation, add admin account page, and update admin settings
+[33m9d23fb3[m Connect info@snack-fruits.com professionally to contact forms and footer
+[33m711dee5[m Configure vercel-build script for Vercel deployment
