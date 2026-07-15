@@ -131,13 +131,13 @@ export function Header() {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <LanguageToggle />
               <ThemeToggle />
-              <button
-                onClick={() => navigate("contact")}
+              <a
+                href="/contact-version-2"
                 className="hidden sm:inline-flex shine-hover items-center gap-1.5 px-3 lg:px-4 h-9 rounded-full bg-orange text-orange-foreground font-semibold text-xs lg:text-sm shadow-md shadow-orange/25 hover:bg-orange-dark transition-colors"
               >
                 <Phone className="w-3 h-3 lg:w-3.5 lg:h-3.5" strokeWidth={2.4} />
                 <span className="truncate">{c.nav.requestQuote}</span>
-              </button>
+              </a>
               {/* Admin access — subtle icon, only visible on desktop */}
               <a
                 href="/admin"
@@ -183,15 +183,13 @@ export function Header() {
                   {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => {
-                  navigate("contact");
-                  setOpen(false);
-                }}
-                className="w-full mt-2 px-4 py-3 rounded-lg bg-orange text-orange-foreground font-semibold text-sm"
+              <a
+                href="/contact-version-2"
+                onClick={() => setOpen(false)}
+                className="block w-full mt-2 px-4 py-3 rounded-lg bg-orange text-orange-foreground font-semibold text-sm"
               >
                 {c.nav.requestQuote}
-              </button>
+              </a>
               <a
                 href="/admin"
                 onClick={() => setOpen(false)}
